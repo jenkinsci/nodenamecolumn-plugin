@@ -72,7 +72,7 @@ public class NodeNameColumn extends ListViewColumn {
         try {
             jobType = JobTypeEnum.valueOf(type);
         } catch(IllegalArgumentException e) {
-            throw new RuntimeException("String has no matching NumeralEnum value");
+            return "N/A"; // If it is not a type JobTypeEnum, then return N/A.
         }
         name = "N/A";
         if (obj != null){
