@@ -24,15 +24,11 @@
 package hudson.plugins.nodenamecolumn;
 
 import hudson.Extension;
-import hudson.XmlFile;
-import hudson.matrix.MatrixProject;
-import hudson.maven.MavenModuleSet;
+import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
-import hudson.model.Job;
-import hudson.model.FreeStyleProject;
+import hudson.model.Item;
+import hudson.model.Label;
 import hudson.views.ListViewColumn;
-
-import java.io.IOException;
 
 import net.sf.json.JSONObject;
 
@@ -45,62 +41,19 @@ import org.kohsuke.stapler.StaplerRequest;
  */
 public class NodeNameColumn extends ListViewColumn {
 
-    public String getNodeName(Job job) {
-        String name="";
-        XmlFile configXmlFile = job.getConfigFile();
-        try{
-            Object obj =  configXmlFile.read();
-            name = getName(obj, job.getClass().getSimpleName());
-        }catch(IOException ex){
-           //Exception in reading config file
-        }
-        return name;
-    }
-    public enum JobTypeEnum{
-       FreeStyleProject, MavenModuleSet, MatrixProject;
-    }
-    @Extension
-    public static final Descriptor<ListViewColumn> DESCRIPTOR = new DescriptorImpl();
-
-    public Descriptor<ListViewColumn> getDescriptor() {
-        return DESCRIPTOR;
-    }
-
-    private String getName(Object obj, String type){
-        String name = null;
-        final JobTypeEnum jobType;
-        try {
-            jobType = JobTypeEnum.valueOf(type);
-        } catch(IllegalArgumentException e) {
-            throw new RuntimeException("String has no matching NumeralEnum value");
-        }
-        name = "N/A";
-        if (obj != null){
-            switch (jobType){
-                case FreeStyleProject:
-                    if (((FreeStyleProject)obj).getAssignedLabel() != null) {
-                        name = ((FreeStyleProject)obj).getAssignedLabel().getName();
-                    }
-                    break;
-                case MavenModuleSet:
-                    if (((MavenModuleSet)obj).getAssignedLabel() != null){
-                        name = ((MavenModuleSet)obj).getAssignedLabel().getName();
-                    }
-                    break;
-                case MatrixProject:
-                    if (((MatrixProject)obj).getAssignedLabel() != null){
-                        name = ((MatrixProject)obj).getAssignedLabel().getName();
-                    }
-                    break;
-                default:
-                    name = "N/A";
-
+    public String getNodeName(Item item) {
+        if (item instanceof AbstractProject) {
+            final Label assignedLabel = ((AbstractProject) item).getAssignedLabel();
+            if (assignedLabel != null) {
+                return assignedLabel.getDisplayName();
             }
+            return "N/A";
         }
-        return name;
+        return "";
     }
 
-    private static class DescriptorImpl extends Descriptor<ListViewColumn> {
+    @Extension
+    public static class DescriptorImpl extends Descriptor<ListViewColumn> {
         @Override
         public ListViewColumn newInstance(StaplerRequest req,
                                           JSONObject formData) throws FormException {
